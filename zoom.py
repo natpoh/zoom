@@ -26,6 +26,21 @@ stream = p.open(format=FORMAT, channels=p.get_device_info_by_index(device).get('
                 input=True, frames_per_buffer=CHUNK, input_device_index=device)
 
 
+def zoomcount():
+    zoomcount = 0
+    p_tasklist = subprocess.Popen('tasklist.exe /fo csv',
+                                  stdout=subprocess.PIPE,
+                                  universal_newlines=True)
+
+    pythons_tasklist = []
+    for p in csv.DictReader(p_tasklist.stdout):
+
+        if p['€¬п ®Ўа\xa0§\xa0'] == 'Zoom.exe':
+            zoomcount = zoomcount + 1
+            #print('enabled ')
+            #print(p)
+
+    return zoomcount
 
 def isWindowsProcessRunning( exeName ) :
 
@@ -90,7 +105,9 @@ def enable_sound():
 
 def runzoom():
     #проверяем открыто ли окно зум
-
+    count = zoomcount()
+    if count == 2:
+        return 1
     data = pg.locateOnScreen('zoom_opened_n.png',grayscale=True)
     if data:
         return 1
