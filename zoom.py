@@ -74,14 +74,13 @@ def check_users_sound():
 def enable_sound():
 
 
-        
-        data = pg.locateOnScreen('mic_disabled.png')
+        data = pg.locateOnScreen('mic_disabled.png',grayscale=True)
         if data:
             pg.moveTo(data[0] + 5, data[1] + 5)
             pg.click()
             time.sleep(1)
 
-        data = pg.locateOnScreen('original_sound.png')
+        data = pg.locateOnScreen('original_sound.png',grayscale=True)
         if data:
             pg.moveTo(data[0] + 5, data[1] + 5)
             pg.click()
@@ -92,11 +91,11 @@ def enable_sound():
 def runzoom():
     #проверяем открыто ли окно зум
 
-    data = pg.locateOnScreen('zoom_opened_n.png')
+    data = pg.locateOnScreen('zoom_opened_n.png',grayscale=True)
     if data:
         return 1
 
-    data = pg.locateOnScreen('zoom_opened.png')
+    data = pg.locateOnScreen('zoom_opened.png',grayscale=True)
     if data:
         return 1
     print('не вижу открытое окно зум')
