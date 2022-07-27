@@ -204,9 +204,16 @@ def getlastday():
     
 def pause_kirtan():
     #print('надо нажать на паузу')
-    #os.system("TASKKILL /F /IM LA.exe")
-    for process in (process for process in psutil.process_iter() if process.name() == "LA.exe"):
-        process.kill()
+    print('проверяем может киртан уже играет')
+    data = pg.locateOnScreen('lighalloy.png')
+    if data:
+        pg.moveTo(data[0] + 3, data[1] + 3)
+        pg.click()
+        time.sleep(0.5)
+        pg.press('escape')
+
+        #os.system("TASKKILL /F /IM LA.exe")
+
 
 
 def play_kirtan():
@@ -216,7 +223,7 @@ def play_kirtan():
         print('плеер уже отктрыт')
         return 1
 
-    
+    print('похоже что плеер закрыт пытаемся открыть')
     kirtan_name = check_last_played() 
     os.startfile(r''+kirtan_folder+str(kirtan_name))
     print('запускаем файл '+str(kirtan_name))
