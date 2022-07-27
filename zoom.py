@@ -6,6 +6,10 @@ import schedule
 import time
 import pyaudio
 import audioop
+import subprocess
+import csv
+
+
 
 p = pyaudio.PyAudio()
 CHUNK = 1024
@@ -20,6 +24,21 @@ print(channels)
 
 stream = p.open(format=FORMAT, channels=p.get_device_info_by_index(device).get('maxInputChannels'), rate=RATE,
                 input=True, frames_per_buffer=CHUNK, input_device_index=device)
+
+
+
+def isWindowsProcessRunning( exeName ) :
+
+    process = subprocess.Popen(
+        'tasklist.exe /FO CSV /FI "IMAGENAME eq %s"' % exeName,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        universal_newlines=True )
+    out, err = process.communicate()
+    try : return out.split("\n")[1].startswith('"%s"' % exeName)
+    except : return False
+
+
+
 
 
 conf_id = '8829424825'
@@ -205,20 +224,15 @@ def getlastday():
 def pause_kirtan():
     #print('надо нажать на паузу')
     print('проверяем может киртан уже играет')
-    data = pg.locateOnScreen('lighalloy.png')
+    data = isWindowsProcessRunning('LA.exe')
     if data:
-        pg.moveTo(data[0] + 3, data[1] + 3)
-        pg.click()
-        time.sleep(0.5)
-        pg.press('escape')
-
-        #os.system("TASKKILL /F /IM LA.exe")
+        os.system("TASKKILL /F /IM LA.exe")
 
 
 
 def play_kirtan():
     print('проверяем может киртан уже играет')
-    data = pg.locateOnScreen('lighalloy.png')
+    data = isWindowsProcessRunning('LA.exe')
     if data:
         print('плеер уже отктрыт')
         return 1
