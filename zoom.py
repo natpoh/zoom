@@ -1,0 +1,310 @@
+import pyautogui as pg
+import numpy as np
+import os
+import datetime
+import schedule
+import time
+import pyaudio
+import audioop
+
+p = pyaudio.PyAudio()
+CHUNK = 1024
+FORMAT = pyaudio.paInt16
+RATE = 44100
+silent_threshold = 10
+
+device = 3
+
+channels=p.get_device_info_by_index(device)
+print(channels)
+
+stream = p.open(format=FORMAT, channels=p.get_device_info_by_index(device).get('maxInputChannels'), rate=RATE,
+                input=True, frames_per_buffer=CHUNK, input_device_index=device)
+
+
+conf_id = '8829424825'
+conf_pass = 'bnk'
+kirtan_folder = 'D:/kirtans/'
+date_tokirtan1 = "18:00"
+date_tokirtan2 = "21:00"
+date_tokirtan3 = "22:30"
+
+
+
+
+
+
+def check_users_sound():
+
+    for x in range(100):
+        data = stream.read(CHUNK)
+        threshold = audioop.max(data, 2)
+        print(str(x)+ ': '+str(threshold))
+        if threshold > silent_threshold:
+            print("Sound found at index " + str(device))
+            pause_kirtan()
+            return 1
+        time.sleep(0.1)
+    print("Sound is off ")
+    play_kirtan()
+
+
+
+def enable_sound():
+    if runzoom():
+        print('zoom запущен проверяем звук')
+       
+        data = pg.locateOnScreen('video_disabled.png', grayscale=True)
+        if data:
+            pg.moveTo(data[0] + 5, data[1] + 5)
+            pg.click()
+            time.sleep(1)
+        else:
+            data = pg.locateOnScreen('zoom_opened_n.png', grayscale=True)
+            if data:
+                pg.moveTo(data[0] + 50, data[1] + 50)
+                time.sleep(1)
+
+            data = pg.locateOnScreen('zoom_opened.png')
+            if data:
+                pg.moveTo(data[0] + 50, data[1] + 50)
+                time.sleep(1)
+
+
+        
+        data = pg.locateOnScreen('mic_disabled.png', grayscale=True)
+        if data:
+            pg.moveTo(data[0] + 5, data[1] + 5)
+            pg.click()
+            time.sleep(1)
+     
+
+def runzoom():
+    #проверяем открыто ли окно зум
+    
+    data = pg.locateOnScreen('zoom_opened_n.png', grayscale=True)
+    if data:
+        return 1
+
+    data = pg.locateOnScreen('zoom_opened.png')
+    if data:
+        return 1
+
+
+
+    data = pg.locateOnScreen('fulscreen.png', grayscale=True)
+    if data:
+        pg.moveTo(data[0] + 5, data[1] + 5)
+        pg.click()
+        time.sleep(2)
+        print('разворачиваем свернутое окно')
+        return runzoom()
+ 
+    data = pg.locateOnScreen('fulscreen_2.png', grayscale=True)
+    if data:
+        pg.moveTo(data[0] + 5, data[1] + 5)
+        pg.click()
+        time.sleep(2)
+        print('разворачиваем свернутое окно')
+        return runzoom()
+    
+    
+    
+    data = pg.locateOnScreen('zoom_ok.png', grayscale=True)
+    if data:
+        pg.moveTo(data[0] + 5, data[1] + 5)
+        pg.click()
+        time.sleep(2)
+        print('нажимаем кнопку ОК в окне зум')
+        return runzoom()
+    
+    
+
+    
+    print('пытаемся открыть зум в нижнем правом углу')    
+    data = pg.locateOnScreen('zoom_shotcout.png', grayscale=True)
+   
+    if data:
+        pg.moveTo(data[0] + 5, data[1] + 5)
+        pg.click()
+        time.sleep(3)
+        print('нажали на кнопку') 
+        
+        #проверяем может зум уже открыт
+    print('проверяем может зум уже открыт')
+    data = pg.locateOnScreen('disabled_login.png')
+    if data:
+            print('похоже зум уже открыт и свернут пытаемся развернуть')            
+            data = pg.locateOnScreen('zoom_shotcout_big.png', grayscale=True)
+            if data:
+                pg.moveTo(data[0] + 5, data[1] + 5)
+                pg.click()
+                time.sleep(1)
+                pg.moveTo(data[0] +100, data[1] - 100)
+                pg.click()
+                time.sleep(1)
+                return runzoom()
+       
+        
+    #пытаемся залогиниться
+    print('пытаемся залогиниться')
+    data = pg.locateOnScreen('login_conf.png')
+    if data:
+            pg.moveTo(data[0] + 5, data[1] + 5)
+            pg.click()
+            print('нажали кнопку логин')
+            time.sleep(1)
+            
+            #вводим ид конференции
+            data = pg.locateOnScreen('input_conf.png', grayscale=True)
+            if data:
+                pg.moveTo(data[0] + 100, data[1] + 100)
+                pg.click()
+                time.sleep(1)
+                pg.typewrite(str(conf_id))
+                pg.press('enter')
+                time.sleep(1)
+                print('вводим код доступа')
+                data = pg.locateOnScreen('input_code.png', grayscale=True)
+                if data:
+                    pg.moveTo(data[0] + 100, data[1] + 100)
+                    pg.click()
+                    time.sleep(1)
+                    pg.typewrite(str(conf_pass))
+                    pg.press('enter')
+                    time.sleep(10)
+
+                return 1
+            else:
+                print('не вижу окна ввода идентификатора')
+        
+    else:
+        print('zoom not opened')
+        os.startfile(r'C:\Users\serg_\AppData\Roaming\Zoom\bin\Zoom.exe')
+        time.sleep(5)
+        runzoom()
+
+
+def getlastday():
+    
+    result=0
+    
+    f = open('lastday.txt', 'r')
+    for lastday in f:
+            
+        print(lastday)
+    now = datetime.datetime.now()
+    d_date = now.hour
+
+    if (int(lastday) != int(d_date)):
+        f = open('lastday.txt', 'w')
+        f.write(str(d_date))
+        result = 1
+    else:
+        result = 0
+    
+    f.close()
+    return result
+    
+    
+    
+    
+def pause_kirtan():
+    print('надо нажать на паузу')
+    time.sleep(1000)
+
+
+def play_kirtan():
+    
+    kirtan_name = check_last_played() 
+    os.startfile(r''+kirtan_folder+str(kirtan_name))
+    print('запускаем файл '+str(kirtan_name))
+    return 1
+    
+    
+    
+    #проверяем открыл ли виндовс плеер
+    data = pg.locateOnScreen('windows_media_player.png', grayscale=True)
+    if data:
+        print('плеер уже отктрыт')
+        return 2
+    else:
+        data = pg.locateOnScreen('windows_media_player_2.png', grayscale=True)
+        if data:
+            print('плеер уже отктрыт 2')
+            return 2
+        else:
+            os.startfile(r''+kirtan_folder+str(kirtan_name))
+            print('запускаем файл '+str(kirtan_name))
+            return 1
+        
+
+def check_last_played():
+    #проверяем какой киртан играл вчер
+    f = open('list.txt', 'r')
+    for lastsong in f:
+        print(lastsong)
+       
+    f.close()
+    
+    
+    #берем список файлов
+    directory = kirtan_folder
+    files = os.listdir(directory)      
+    files = list(filter(lambda x: x.endswith('.mp3'), files))
+    #print(files)
+
+    
+   
+    try:
+        index = files.index(lastsong)
+    except:
+        index = 0
+        
+    #проверяем день тот же что и вчера или изменился
+        
+    day = getlastday()
+    
+    
+    if (day==0):
+        return lastsong
+
+    
+    next_index = int(index)+1
+    
+    try:
+        next_song = files[next_index]
+    except:
+        next_index = 0  
+        next_song = files[0]
+    
+    #print(next_song)
+    f = open('list.txt', 'w')
+    f.write(next_song)
+    f.close()
+    return next_song
+    
+
+
+schedule.every().day.at(date_tokirtan1).do(play_kirtan)
+schedule.every().day.at(date_tokirtan2).do(play_kirtan)
+schedule.every().day.at(date_tokirtan3).do(play_kirtan)    
+
+
+#проверяем включен ли звук каждые 15 секунд
+        
+while True:
+   #enable_sound()
+   #time.sleep(1)
+   check_users_sound()
+   time.sleep(1)
+
+   # for x in range(20):
+   #      schedule.run_pending()
+   #      time.sleep(1)
+
+   
+        
+        
+        
+        
