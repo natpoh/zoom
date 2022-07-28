@@ -14,7 +14,7 @@ import csv
 
 conf_id = '81141237582'
 conf_pass = '973133'
-kirtan_folder = 'C:/kirtans/'
+kirtan_folder = 'С:/kirtans/'
 zoomfolder ='C:/Users/Администратор/AppData/Roaming/Zoom/bin/Zoom.exe'
 
 
@@ -28,7 +28,7 @@ CHUNK = 1024
 FORMAT = pyaudio.paInt16
 RATE = 44100
 silent_threshold = 10
-time_wait = 100
+time_wait = 50
 device = 2
 
 channels=p.get_device_info_by_index(device)
@@ -76,22 +76,21 @@ def isWindowsProcessRunning( exeName ) :
 
 
 
-def check_users_sound():
-
-    for x in range(time_wait):
-        data = stream.read(CHUNK)
-        threshold = audioop.max(data, 2)
-        print(str(x)+ ': '+str(threshold))
-        if threshold > silent_threshold:
-            print("Sound found at index " + str(device))
-            pause_kirtan()
-            return 1
-        time.sleep(0.5)
-    print("Sound is off ")
+def check_users_sound(time_wait):
     if (runzoom()):
-
+        for x in range(time_wait):
+            data = stream.read(CHUNK)
+            threshold = audioop.max(data, 2)
+            print(str(x) + ': ' + str(threshold))
+            if threshold > silent_threshold:
+                print("Sound found at index " + str(device))
+                pause_kirtan()
+                return 1
+            time.sleep(1)
+        print("Sound is off")
         print("play_kirtan ")
         play_kirtan()
+
 
 
 def enable_sound():
@@ -365,7 +364,7 @@ if (runzoom()):
 
 while True:
 
-   check_users_sound()
+   check_users_sound(time_wait)
    time.sleep(1)
    if (getlastday(0)):
        pause_kirtan()
