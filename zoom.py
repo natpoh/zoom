@@ -14,7 +14,7 @@ import csv
 
 conf_id = '81141237582'
 conf_pass = '973133'
-kirtan_folder = 'С:/kirtans/'
+kirtan_folder = 'C:/kirtans/'
 zoomfolder ='C:/Users/Администратор/AppData/Roaming/Zoom/bin/Zoom.exe'
 
 
