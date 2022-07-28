@@ -245,7 +245,7 @@ def getlastday():
     #print(d_date)
     #print(float(d_date) - float(lastday))
 
-    if (float(lastday)+86400/2 < float(d_date) ):
+    if (float(lastday)+1200 < float(d_date) ):
         f = open('lastday.txt', 'w')
         f.write(str(d_date))
         result = 1
