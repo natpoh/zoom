@@ -14,7 +14,7 @@ import csv
 
 conf_id = '81141237582'
 conf_pass = '973133'
-kirtan_folder = 'С:/kirtans/'
+kirtan_folder = 'C:/kirtans/'
 zoomfolder ='C:/Users/Администратор/AppData/Roaming/Zoom/bin/Zoom.exe'
 
 
@@ -28,7 +28,7 @@ CHUNK = 1024
 FORMAT = pyaudio.paInt16
 RATE = 44100
 silent_threshold = 10
-time_wait = 50
+time_wait = 10
 device = 2
 
 channels=p.get_device_info_by_index(device)
@@ -81,15 +81,18 @@ def check_users_sound(time_wait):
         for x in range(time_wait):
             data = stream.read(CHUNK)
             threshold = audioop.max(data, 2)
-            print(str(x) + ': ' + str(threshold))
+            #print(str(x) + ': ' + str(threshold))
             if threshold > silent_threshold:
-                print("Sound found at index " + str(device))
+                print("Sound found at index " + str(x) + ': ' + str(threshold))
                 pause_kirtan()
                 return 1
+            print(str(x) + ': ' + str(threshold))
             time.sleep(1)
-        print("Sound is off")
-        print("play_kirtan ")
+
+        print("Sound is off. Play_kirtan" )
         play_kirtan()
+        return 0
+
 
 
 
@@ -279,7 +282,7 @@ def getlastday(update):
     
 def pause_kirtan():
     #print('надо нажать на паузу')
-    print('проверяем может киртан уже играет')
+    #print('проверяем может киртан уже играет')
     data = isWindowsProcessRunning('LA.exe')
     if data:
         os.system("TASKKILL /F /IM LA.exe")
@@ -287,7 +290,7 @@ def pause_kirtan():
 
 
 def play_kirtan():
-    print('проверяем может киртан уже играет')
+    #print('проверяем может киртан уже играет')
     data = isWindowsProcessRunning('LA.exe')
     if data:
         print('плеер уже отктрыт')
@@ -364,10 +367,13 @@ if (runzoom()):
 
 while True:
 
-   check_users_sound(time_wait)
+   played = check_users_sound(time_wait)
+   if played == 0:
+       if (getlastday(0)):
+           pause_kirtan()
+
    time.sleep(1)
-   if (getlastday(0)):
-       pause_kirtan()
+
 
    
         
