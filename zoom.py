@@ -1,4 +1,4 @@
-import pyautogui as pg
+﻿import pyautogui as pg
 import numpy as np
 import os
 import datetime
@@ -9,6 +9,13 @@ import audioop
 import subprocess
 import csv
 
+#conf_id = '8829424825'
+#conf_pass = 'bnk'
+
+conf_id = '81141237582'
+conf_pass = '973133'
+kirtan_folder = 'C:/kirtans/'
+zoomfolder ='C:/Users/Администратор/AppData/Roaming/Zoom/bin/Zoom.exe'
 
 
 p = pyaudio.PyAudio()
@@ -16,7 +23,7 @@ CHUNK = 1024
 FORMAT = pyaudio.paInt16
 RATE = 44100
 silent_threshold = 10
-
+time_wait = 100
 device = 2
 
 channels=p.get_device_info_by_index(device)
@@ -56,13 +63,8 @@ def isWindowsProcessRunning( exeName ) :
 
 
 
-conf_id = '8829424825'
-conf_pass = 'bnk'
-kirtan_folder = 'C:/kirtans/'
-zoomfolder ='C:/Users/Администратор/AppData/Roaming/Zoom/bin/Zoom.exe'
-date_tokirtan1 = "18:00"
-date_tokirtan2 = "21:00"
-date_tokirtan3 = "22:30"
+
+
 
 
 
@@ -71,7 +73,7 @@ date_tokirtan3 = "22:30"
 
 def check_users_sound():
 
-    for x in range(20):
+    for x in range(time_wait):
         data = stream.read(CHUNK)
         threshold = audioop.max(data, 2)
         print(str(x)+ ': '+str(threshold))
@@ -105,12 +107,10 @@ def enable_sound():
 
 def runzoom():
     #проверяем открыто ли окно зум
-    count = zoomcount()
-    if count == 2:
-        return 1
-    data = pg.locateOnScreen('zoom_opened_n.png',grayscale=True)
-    if data:
-        return 1
+    #count = zoomcount()
+    #if count == 2:
+    #    return 1
+
 
     data = pg.locateOnScreen('zoom_opened.png',grayscale=True)
     if data:
@@ -177,6 +177,7 @@ def runzoom():
     #пытаемся залогиниться
     print('пытаемся залогиниться')
     data = pg.locateOnScreen('login_conf.png')
+
     if data:
             pg.moveTo(data[0] + 5, data[1] + 5)
             pg.click()
@@ -184,33 +185,46 @@ def runzoom():
             time.sleep(2)
             
             #вводим ид конференции
-            data = pg.locateOnScreen('input_conf.png')
-            if data:
+    data = pg.locateOnScreen('input_conf.png')
+    if data:
                 pg.moveTo(data[0] + 100, data[1] + 100)
                 pg.click()
                 time.sleep(3)
                 pg.typewrite(str(conf_id))
                 pg.press('enter')
                 time.sleep(3)
-                print('вводим код доступа')
-                data = pg.locateOnScreen('input_code.png')
-                if data:
+    print('вводим код доступа')
+    data = pg.locateOnScreen('input_code.png')
+    if data:
                     pg.moveTo(data[0] + 100, data[1] + 100)
                     pg.click()
                     time.sleep(1)
                     pg.typewrite(str(conf_pass))
                     pg.press('enter')
-                    time.sleep(10)
 
-                return 1
-            else:
-                print('не вижу окна ввода идентификатора')
-        
-    else:
-        print('zoom not opened')
-        os.startfile(r''+zoomfolder)
-        time.sleep(5)
-        runzoom()
+                    time.sleep(16)
+                    data = pg.locateOnScreen('poniatno.png')
+                    if data:
+                        pg.moveTo(data[0] + 5, data[1] + 5)
+                        pg.click()
+                        time.sleep(1)
+                        pg.doubleClick()
+                        time.sleep(2)
+
+
+
+                    enable_sound()
+
+                    time.sleep(5)
+                    return 1
+
+
+
+
+    print('zoom not opened')
+    os.startfile(r''+zoomfolder)
+    time.sleep(5)
+    runzoom()
 
 
 def getlastday():
@@ -309,22 +323,18 @@ def check_last_played():
     
 
 
-# schedule.every().day.at(date_tokirtan1).do(play_kirtan)
-# schedule.every().day.at(date_tokirtan2).do(play_kirtan)
-# schedule.every().day.at(date_tokirtan3).do(play_kirtan)
 
 
-#проверяем включен ли звук каждые 15 секунд
-        
+#проверяем включен ли звук каждые 100 секунд
+
+if (runzoom()):
+   enable_sound()
+
 while True:
-   #enable_sound()
-   #time.sleep(1)
+
    check_users_sound()
    time.sleep(1)
 
-   # for x in range(20):
-   #      schedule.run_pending()
-   #      time.sleep(1)
 
    
         
