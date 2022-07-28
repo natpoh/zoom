@@ -18,6 +18,10 @@ kirtan_folder = 'C:/kirtans/'
 zoomfolder ='C:/Users/Администратор/AppData/Roaming/Zoom/bin/Zoom.exe'
 
 
+
+
+
+
 p = pyaudio.PyAudio()
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
@@ -236,9 +240,12 @@ def getlastday():
             
         print(lastday)
     now = datetime.datetime.now()
-    d_date = now.hour
+    d_date = now.timestamp()
+    #print(now)
+    #print(d_date)
+    #print(float(d_date) - float(lastday))
 
-    if (int(lastday) != int(d_date)):
+    if (float(lastday)+86400/2 < float(d_date) ):
         f = open('lastday.txt', 'w')
         f.write(str(d_date))
         result = 1
@@ -324,8 +331,59 @@ def check_last_played():
 
 
 
+schedule.every().day.at("00:00").do(pause_kirtan)
+schedule.every().day.at("00:30").do(pause_kirtan)
+schedule.every().day.at("01:00").do(pause_kirtan)
+schedule.every().day.at("01:30").do(pause_kirtan)
+schedule.every().day.at("02:00").do(pause_kirtan)
+schedule.every().day.at("02:30").do(pause_kirtan)
+schedule.every().day.at("03:00").do(pause_kirtan)
+schedule.every().day.at("03:30").do(pause_kirtan)
+schedule.every().day.at("04:00").do(pause_kirtan)
+schedule.every().day.at("04:30").do(pause_kirtan)
+schedule.every().day.at("05:00").do(pause_kirtan)
+schedule.every().day.at("05:30").do(pause_kirtan)
+schedule.every().day.at("06:00").do(pause_kirtan)
+schedule.every().day.at("06:30").do(pause_kirtan)
+schedule.every().day.at("07:00").do(pause_kirtan)
+schedule.every().day.at("07:30").do(pause_kirtan)
+schedule.every().day.at("08:00").do(pause_kirtan)
+schedule.every().day.at("08:30").do(pause_kirtan)
+schedule.every().day.at("09:00").do(pause_kirtan)
+schedule.every().day.at("09:30").do(pause_kirtan)
+schedule.every().day.at("10:00").do(pause_kirtan)
+schedule.every().day.at("10:30").do(pause_kirtan)
+schedule.every().day.at("11:00").do(pause_kirtan)
+schedule.every().day.at("11:30").do(pause_kirtan)
+schedule.every().day.at("12:00").do(pause_kirtan)
+schedule.every().day.at("12:30").do(pause_kirtan)
+schedule.every().day.at("13:00").do(pause_kirtan)
+schedule.every().day.at("13:30").do(pause_kirtan)
+schedule.every().day.at("14:00").do(pause_kirtan)
+schedule.every().day.at("14:30").do(pause_kirtan)
+schedule.every().day.at("15:00").do(pause_kirtan)
+schedule.every().day.at("15:30").do(pause_kirtan)
+schedule.every().day.at("16:00").do(pause_kirtan)
+schedule.every().day.at("16:30").do(pause_kirtan)
+schedule.every().day.at("17:00").do(pause_kirtan)
+schedule.every().day.at("17:30").do(pause_kirtan)
+schedule.every().day.at("18:00").do(pause_kirtan)
+schedule.every().day.at("18:30").do(pause_kirtan)
+schedule.every().day.at("19:00").do(pause_kirtan)
+schedule.every().day.at("19:30").do(pause_kirtan)
+schedule.every().day.at("20:00").do(pause_kirtan)
+schedule.every().day.at("20:30").do(pause_kirtan)
+schedule.every().day.at("21:00").do(pause_kirtan)
+schedule.every().day.at("21:30").do(pause_kirtan)
+schedule.every().day.at("22:00").do(pause_kirtan)
+schedule.every().day.at("22:30").do(pause_kirtan)
+schedule.every().day.at("23:00").do(pause_kirtan)
+schedule.every().day.at("23:30").do(pause_kirtan)
+
+
 
 #проверяем включен ли звук каждые 100 секунд
+
 
 if (runzoom()):
    enable_sound()
