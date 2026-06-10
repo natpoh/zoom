@@ -1,0 +1,16 @@
+2026-06-10 23:45:03.304847 script started
+2026-06-10 23:48:04.729395 script started
+2026-06-10 23:51:38.392695 script started
+2026-06-10 23:57:04.031649 Sound is off. Play_kirtan
+2026-06-10 23:57:12.503738 Gunavati 14092023 PS Divasa.mp3
+2026-06-10 23:57:12.504742 запускаем файл Gunavati 14092023 PS Divasa.mp3
+2026-06-11 00:03:00.730352 script started
+2026-06-11 00:10:35.558336 script started
+2026-06-11 00:11:11.081740 script started
+2026-06-11 00:11:46.868653 script started
+2026-06-11 00:12:04.200532 script started
+2026-06-11 00:14:01.141577 script started
+2026-06-11 00:16:51.183774 script started
+2026-06-11 00:18:54.809415 script started
+2026-06-11 00:20:17.871606 script started
+2026-06-11 00:21:37.139916 script started
