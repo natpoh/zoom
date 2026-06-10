@@ -11,9 +11,7 @@ import subprocess
 import csv
 import random
 
-conf_id = '85244706153' #'81141237582'
-conf_pass = 'd3piUExIRlBaTkttZlRZM2xidGtlZz09'
-kirtan_folder = 'C:/kirtans/'
+from config import conf_id, conf_pass, kirtan_folder
 
 global lastday
 lastday = 0
