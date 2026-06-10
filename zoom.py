@@ -12,6 +12,11 @@ import random
 
 from config import conf_id, conf_pass, kirtan_folder
 
+def locate_image(image_path, **kwargs):
+    if not os.path.exists(image_path):
+        return None
+    return locate_image(image_path, **kwargs)
+
 global lastday
 lastday = 0
 p = pyaudio.PyAudio()
@@ -141,14 +146,14 @@ def check_users_sound(time_wait):
 
 
 def enable_sound():
-        datapon = pg.locateOnScreen('poniatno.png', grayscale=True)
+        datapon = locate_image('poniatno.png', grayscale=True)
         if datapon:
             print('нажимаем понятно')
             pg.moveTo(datapon[0] + 5, datapon[1] + 5)
             pg.click()
             time.sleep(2)
 
-        dataorg = pg.locateOnScreen('org_enable_sound.png', grayscale=True)
+        dataorg = locate_image('org_enable_sound.png', grayscale=True)
         if dataorg:
             print('нажимаем включить звук от организатора')
             pg.moveTo(dataorg[0] + 5, dataorg[1] + 5)
@@ -156,7 +161,7 @@ def enable_sound():
             time.sleep(2)
 
 
-        data = pg.locateOnScreen('mic_disabled.png',grayscale=True)
+        data = locate_image('mic_disabled.png',grayscale=True)
         if data:
             print('пытаемся включить звук')
             pg.moveTo(data[0] + 5, data[1] + 5)
@@ -165,7 +170,7 @@ def enable_sound():
 
 
 
-        data = pg.locateOnScreen('original_sound.png',grayscale=True)
+        data = locate_image('original_sound.png',grayscale=True)
         if data:
             print('пытаемся включить оригинальный звук')
             pg.moveTo(data[0] + 5, data[1] + 5)
@@ -190,27 +195,27 @@ def runzoom():
 
     return
 
-    data = pg.locateOnScreen('zoom_opened.png',grayscale=True)
+    data = locate_image('zoom_opened.png',grayscale=True)
     if data:
         return 1
     print('не вижу открытое окно зум')
     logfile("zoom closed")
     print('нажимаем кнопку ОК в окне зум')
-    data = pg.locateOnScreen('ok.png')
+    data = locate_image('ok.png')
     if data:
                     pg.moveTo(data[0] + 5, data[1] + 5)
                     print('нажимаем кнопку ОК в окне зум')
                     pg.click()
                     time.sleep(2)
                     
-    data = pg.locateOnScreen('poniatno.png')
+    data = locate_image('poniatno.png')
     if data:
                     pg.moveTo(data[0] + 5, data[1] + 5)
                     pg.click()
                     print('нажимаем кнопку понятно в окне зум') 
                     time.sleep(2)
         
-    data = pg.locateOnScreen('fulscreen.png')
+    data = locate_image('fulscreen.png')
     if data:
         pg.moveTo(data[0] + 5, data[1] + 5)
         pg.click()
@@ -218,7 +223,7 @@ def runzoom():
         print('разворачиваем свернутое окно')
         return runzoom()
  
-    data = pg.locateOnScreen('fulscreen_2.png')
+    data = locate_image('fulscreen_2.png')
     if data:
         pg.moveTo(data[0] + 5, data[1] + 5)
         pg.click()
@@ -231,10 +236,10 @@ def runzoom():
         
         #проверяем может зум уже открыт
     print('проверяем может зум уже открыт')
-    data = pg.locateOnScreen('disabled_login.png')
+    data = locate_image('disabled_login.png')
     if data:
             print('похоже зум уже открыт и свернут пытаемся развернуть')            
-            data = pg.locateOnScreen('zoom_shotcout_big.png')
+            data = locate_image('zoom_shotcout_big.png')
             if data:
                 pg.moveTo(data[0] + 5, data[1] + 5)
                 pg.click()
@@ -250,7 +255,7 @@ def runzoom():
         
     #пытаемся залогиниться
     print('пытаемся залогиниться')
-    data = pg.locateOnScreen('login_conf.png')
+    data = locate_image('login_conf.png')
 
     if data:
             pg.moveTo(data[0] + 5, data[1] + 5)
@@ -259,7 +264,7 @@ def runzoom():
             time.sleep(2)
             
             #вводим ид конференции
-    data = pg.locateOnScreen('input_conf.png')
+    data = locate_image('input_conf.png')
     if data:
                 pg.moveTo(data[0] + 100, data[1] + 100)
                 pg.click()
@@ -268,7 +273,7 @@ def runzoom():
                 pg.press('enter')
                 time.sleep(3)
     print('вводим код доступа')
-    data = pg.locateOnScreen('input_code.png')
+    data = locate_image('input_code.png')
     if data:
                     pg.moveTo(data[0] + 100, data[1] + 100)
                     pg.click()
@@ -277,13 +282,13 @@ def runzoom():
                     pg.press('enter')
 
                     time.sleep(16)
-                    data = pg.locateOnScreen('poniatno.png')
+                    data = locate_image('poniatno.png')
                     if data:
                         pg.moveTo(data[0] + 5, data[1] + 5)
                         pg.click()
                         time.sleep(2)
 
-                    data = pg.locateOnScreen('poniatno.png')
+                    data = locate_image('poniatno.png')
                     if data:
                         pg.moveTo(data[0] + 5, data[1] + 5)
                         pg.click()
