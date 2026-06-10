@@ -158,13 +158,6 @@ def enable_sound():
             pg.click()
             time.sleep(2)
 
-        dataorg = locate_image('org_enable_sound.png', grayscale=True)
-        if dataorg:
-            print('нажимаем включить звук от организатора')
-            pg.moveTo(dataorg[0] + 5, dataorg[1] + 5)
-            pg.click()
-            time.sleep(2)
-
 
         data = locate_image('mic_disabled.png',grayscale=True)
         if data:
