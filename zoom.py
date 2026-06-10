@@ -1,4 +1,5 @@
-﻿import pyautogui as pg
+import pyautogui as pg
+
 import numpy as np
 import os
 import datetime
@@ -8,18 +9,11 @@ import pyaudio
 import audioop
 import subprocess
 import csv
+import random
 
-#conf_id = '8829424825'
-#conf_pass = 'bnk'
-
-conf_id = '81141237582'
-conf_pass = '973133'
+conf_id = '85244706153' #'81141237582'
+conf_pass = 'd3piUExIRlBaTkttZlRZM2xidGtlZz09'
 kirtan_folder = 'C:/kirtans/'
-zoomfolder ='C:/Users/Администратор/AppData/Roaming/Zoom/bin/Zoom.exe'
-
-
-
-
 
 global lastday
 lastday = 0
@@ -28,14 +22,31 @@ CHUNK = 1024
 FORMAT = pyaudio.paInt16
 RATE = 44100
 silent_threshold = 10
-time_wait = 10
+time_wait = 60
 device = 2
+
+#conf_id = '8829424825'
+#conf_id = '9264933287'
+#conf_pass = 'bnk'
+#time_wait = 6
+#device = 1
+
+zoomfolder ='zoommtg://zoom.us/join?action=join&confno='+str(conf_id)+'&pwd='+str(conf_pass)
+
+
 
 channels=p.get_device_info_by_index(device)
 print(channels)
 
 stream = p.open(format=FORMAT, channels=p.get_device_info_by_index(device).get('maxInputChannels'), rate=RATE,
                 input=True, frames_per_buffer=CHUNK, input_device_index=device)
+
+
+def logfile(data):
+    log_d = open("log.txt", "a")
+    log_d.write(str(datetime.datetime.now()) + ' ' + str(data) + '\n')
+    log_d.close()
+
 
 
 def zoomcount():
@@ -66,13 +77,54 @@ def isWindowsProcessRunning( exeName ) :
 
 
 
+def zoomcounted():
+    zoomcount = 0
 
 
+    p_tasklist = subprocess.Popen('tasklist.exe /fo csv',
+                                  stdout=subprocess.PIPE,
+                                  universal_newlines=True
+                                  )
 
+    pythons_tasklist = []
+    for p in csv.DictReader(p_tasklist.stdout):
+        #print(p)
 
+        if p['€¬п ®Ўа\xa0§\xa0'] == 'Zoom.exe':
+            zoomcount = zoomcount + 1
+            pythons_tasklist.append(p['PID'])
 
+    return pythons_tasklist
 
+def savedata(zoomdata):
+    f = open('data/zoomdata.txt', 'w')
+    f.write(str(zoomdata))
+    f.close()
+def checkzoom():
+    zoomcount = zoomcounted()
+    zoomcount.sort()
+    zoomcount= str(zoomcount)
+    print(zoomcount)
 
+    f = open('data/zoomdata.txt', 'r')
+
+    for zoomdata in f:
+        time.sleep(0.1)
+    f.close()
+
+    if zoomdata != zoomcount:
+            print('похоже что зум закрыт '+zoomdata+' != '+zoomcount)
+            rs = runzoom()
+            if rs == 1:
+                if zoomcount == '[]':
+                    zoomcount = zoomcounted()
+                    zoomcount.sort()
+                    zoomcount = str(zoomcount)
+                savedata(zoomcount)
+                enable_sound()
+                return 1
+    else:
+            print('ok '+zoomdata+' = '+zoomcount)
 
 
 
@@ -84,12 +136,14 @@ def check_users_sound(time_wait):
             #print(str(x) + ': ' + str(threshold))
             if threshold > silent_threshold:
                 print("Sound found at index " + str(x) + ': ' + str(threshold))
+                
                 pause_kirtan()
                 return 1
             print(str(x) + ': ' + str(threshold))
             time.sleep(1)
 
         print("Sound is off. Play_kirtan" )
+        logfile("Sound is off. Play_kirtan" )
         play_kirtan()
         return 0
 
@@ -97,19 +151,35 @@ def check_users_sound(time_wait):
 
 
 def enable_sound():
+        datapon = pg.locateOnScreen('poniatno.png', grayscale=True)
+        if datapon:
+            print('нажимаем понятно')
+            pg.moveTo(datapon[0] + 5, datapon[1] + 5)
+            pg.click()
+            time.sleep(2)
+
+        dataorg = pg.locateOnScreen('org_enable_sound.png', grayscale=True)
+        if dataorg:
+            print('нажимаем включить звук от организатора')
+            pg.moveTo(dataorg[0] + 5, dataorg[1] + 5)
+            pg.click()
+            time.sleep(2)
 
 
         data = pg.locateOnScreen('mic_disabled.png',grayscale=True)
         if data:
+            print('пытаемся включить звук')
             pg.moveTo(data[0] + 5, data[1] + 5)
             pg.click()
-            time.sleep(1)
+            time.sleep(2)
+
+
 
         data = pg.locateOnScreen('original_sound.png',grayscale=True)
         if data:
+            print('пытаемся включить оригинальный звук')
             pg.moveTo(data[0] + 5, data[1] + 5)
             pg.click()
-
 
 
 
@@ -118,15 +188,38 @@ def runzoom():
     #count = zoomcount()
     #if count == 2:
     #    return 1
+    count = zoomcount()
+    print(count)
+    if count == 2:
+        return 1;
+    else:
+        print('zoom not opened')
+        os.startfile(r'' + zoomfolder)
+        time.sleep(15)
+        runzoom()
 
+    return
 
     data = pg.locateOnScreen('zoom_opened.png',grayscale=True)
     if data:
         return 1
     print('не вижу открытое окно зум')
-
-
-
+    logfile("zoom closed")
+    print('нажимаем кнопку ОК в окне зум')
+    data = pg.locateOnScreen('ok.png')
+    if data:
+                    pg.moveTo(data[0] + 5, data[1] + 5)
+                    print('нажимаем кнопку ОК в окне зум')
+                    pg.click()
+                    time.sleep(2)
+                    
+    data = pg.locateOnScreen('poniatno.png')
+    if data:
+                    pg.moveTo(data[0] + 5, data[1] + 5)
+                    pg.click()
+                    print('нажимаем кнопку понятно в окне зум') 
+                    time.sleep(2)
+        
     data = pg.locateOnScreen('fulscreen.png')
     if data:
         pg.moveTo(data[0] + 5, data[1] + 5)
@@ -144,26 +237,7 @@ def runzoom():
         return runzoom()
     
     
-    
-    data = pg.locateOnScreen('zoom_ok.png')
-    if data:
-        pg.moveTo(data[0] + 5, data[1] + 5)
-        pg.click()
-        time.sleep(2)
-        print('нажимаем кнопку ОК в окне зум')
-        return runzoom()
-    
-    
 
-    
-    print('пытаемся открыть зум в нижнем правом углу')    
-    data = pg.locateOnScreen('zoom_shotcout.png')
-   
-    if data:
-        pg.moveTo(data[0] + 5, data[1] + 5)
-        pg.click()
-        time.sleep(3)
-        print('нажали на кнопку') 
         
         #проверяем может зум уже открыт
     print('проверяем может зум уже открыт')
@@ -179,8 +253,10 @@ def runzoom():
                 pg.click()
                 time.sleep(1)
                 print('нажали чтобы открыть зум')
-                return runzoom()
-       
+                time.sleep(2)
+
+           
+
         
     #пытаемся залогиниться
     print('пытаемся залогиниться')
@@ -215,17 +291,19 @@ def runzoom():
                     if data:
                         pg.moveTo(data[0] + 5, data[1] + 5)
                         pg.click()
-                        time.sleep(1)
-                        pg.doubleClick()
                         time.sleep(2)
 
+                    data = pg.locateOnScreen('poniatno.png')
+                    if data:
+                        pg.moveTo(data[0] + 5, data[1] + 5)
+                        pg.click()
+                        time.sleep(1)
 
-
+                    logfile("zoom started")
                     enable_sound()
 
                     time.sleep(5)
                     return 1
-
 
 
 
@@ -237,7 +315,7 @@ def runzoom():
 
 def getlastday(update):
     global lastday
-    print(lastday)
+    #print(lastday)
     if ((lastday == 0 ) or ( update == 1 ) ):
         f = open('lastday.txt', 'r')
         for lastday in f:
@@ -262,7 +340,7 @@ def getlastday(update):
     #print(d_date)
     #
 
-    if ( (int(d_hour) == int(dt_hour) and int(d_minutes) >= 30 and int(dt_minutes) < 30) or (int(d_hour) > int(dt_hour)) ):
+    if ( (int(d_hour) == int(dt_hour) and int(d_minutes) >= 30 and int(dt_minutes) < 30) or (int(d_hour) != int(dt_hour)) ):
         print(str(d_hour) +':'+str(d_minutes) +' > '+ str(dt_hour) +':'+str(dt_minutes) )
         if (update == 1):
             f = open('lastday.txt', 'w')
@@ -290,7 +368,7 @@ def pause_kirtan():
 
 
 def play_kirtan():
-    #print('проверяем может киртан уже играет')
+    print('проверяем может киртан уже играет')
     data = isWindowsProcessRunning('LA.exe')
     if data:
         print('плеер уже отктрыт')
@@ -300,9 +378,12 @@ def play_kirtan():
     enable_sound()
 
     print('похоже что плеер закрыт пытаемся открыть')
-    kirtan_name = check_last_played() 
+    kirtan_name = check_last_played()
+    
+    logfile('запускаем файл ' + str(kirtan_name))
+    print('запускаем файл ' + str(kirtan_name))
     os.startfile(r''+kirtan_folder+str(kirtan_name))
-    print('запускаем файл '+str(kirtan_name))
+
 
     return 1
 
@@ -311,25 +392,31 @@ def play_kirtan():
 
 def check_last_played():
     #проверяем какой киртан играл вчер
+
+    lastsong = 0
+
     f = open('list.txt', 'r')
-    for lastsong in f:
-        print(lastsong)
-       
+    try:
+        for lastsong in f:
+             print(lastsong)
+    except:
+        lastsong = 0
     f.close()
-    
+
     
     #берем список файлов
     directory = kirtan_folder
     files = os.listdir(directory)      
     files = list(filter(lambda x: x.endswith('.mp3'), files))
-    #print(files)
+    next_song=random.choice(files)
 
-    
-   
-    try:
-        index = files.index(lastsong)
-    except:
-        index = 0
+    index = 0
+    # if lastsong!=0:
+    #
+    #     try:
+    #         index = files.index(lastsong)
+    #     except:
+    #         index = 0
         
     #проверяем день тот же что и вчера или изменился
         
@@ -340,15 +427,16 @@ def check_last_played():
         return lastsong
 
     
-    next_index = int(index)+1
+    #next_index = int(index)+1
     
-    try:
-        next_song = files[next_index]
-    except:
-        next_index = 0  
-        next_song = files[0]
+    # try:
+    #     next_song = files[next_index]
+    # except:
+    #     next_index = 0
+    #     next_song = files[0]
     
-    #print(next_song)
+    logfile(next_song)
+    print(next_song)
     f = open('list.txt', 'w')
     f.write(next_song)
     f.close()
@@ -356,22 +444,34 @@ def check_last_played():
     
 
 
-
 # schedule.every().day.at("00:00").do(pause_kirtan)
 
 #проверяем включен ли звук каждые 100 секунд
 
 
+
+
+logfile("script started")
 if (runzoom()):
    enable_sound()
 
+i = 0;
 while True:
-
+   i = i + 1
    played = check_users_sound(time_wait)
+   #print (played)
    if played == 0:
        if (getlastday(0)):
+           
            pause_kirtan()
-
+           
+       
+    
+   if played == 1 and i >= 10:
+        print(i)
+        enable_sound()
+        i = 0
+       
    time.sleep(1)
 
 
