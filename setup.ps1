@@ -1,97 +1,119 @@
+# PowerShell setup script for Zoom Automation
 $ErrorActionPreference = "Stop"
 
-try {
-    Write-Host "=========================================="
-    Write-Host "   Zoom Automation Environment Setup"
-    Write-Host "=========================================="
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "   Zoom Automation - Setup Environment" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
 
-    # 1. Check for Python
-    $pythonCmd = "python"
-    $pythonFound = $false
+function Get-PythonPath {
+    try {
+        $res = & python --version 2>&1
+        if ($res -match "Python 3\.") { return "python" }
+    } catch {}
 
     try {
-        $ver = & $pythonCmd --version 2>&1
-        if ($ver -match "Python") {
-            Write-Host "Found Python: $ver"
-            $pythonFound = $true
-        }
-    } catch {
-        # Python not found
-    }
+        $res = & py -3 --version 2>&1
+        if ($res -match "Python 3\.") { return "py -3" }
+    } catch {}
 
-    if (-not $pythonFound) {
-        Write-Host "Python not found in PATH."
-        Write-Host "Attempting to install Python 3.11 via winget..."
-        try {
-            winget install --id Python.Python.3.11 --exact --accept-package-agreements --accept-source-agreements --force
-            Write-Host "Python 3.11 installed successfully."
-            
-            # Refresh environment variables in current session to pick up new PATH
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-            
-            # Check again
-            try {
-                $ver = & $pythonCmd --version 2>&1
-                Write-Host "Verified Python is now in PATH: $ver"
-                $pythonFound = $true
-            } catch {
-                Write-Host "WARNING: Python was installed but is still not in PATH."
-                Write-Host "Please restart your terminal (or computer) and run this script again."
-                return
-            }
-        } catch {
-            Write-Host "Failed to install Python. Please install it manually from https://www.python.org/downloads/"
-            Write-Host "IMPORTANT: Make sure to check 'Add Python to PATH' during installation!"
-            return
-        }
-    }
-
-    # 2. Check/Create Virtual Environment
-    if (-not (Test-Path "venv")) {
-        Write-Host "Creating a new virtual environment (venv)..."
-        & $pythonCmd -m venv venv
-    } else {
-        Write-Host "Virtual environment 'venv' already exists. Re-using it."
-    }
-
-    $pythonVenv = ".\venv\Scripts\python.exe"
-
-    if (-not (Test-Path $pythonVenv)) {
-        Write-Host "Error: Could not find Python executable in venv."
-        return
-    }
-
-    # 3. Create requirements.txt
-    $reqFile = "requirements.txt"
-    $dependencies = @(
-        "pyautogui",
-        "schedule",
-        "pyaudio"
+    $possiblePaths = @(
+        "$env:LocalAppData\Programs\Python\Python3*\python.exe",
+        "$env:ProgramFiles\Python3*\python.exe",
+        "C:\Python3*\python.exe"
     )
-    $dependencies | Out-File -FilePath $reqFile -Encoding UTF8
-    Write-Host "Created $reqFile with required dependencies."
+    foreach ($pathPattern in $possiblePaths) {
+        $found = Get-Item $pathPattern -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($found -and (Test-Path $found.FullName)) {
+            return $found.FullName
+        }
+    }
 
-    # 4. Install dependencies
-    Write-Host "Upgrading pip..."
-    & $pythonVenv -m pip install --upgrade pip
-
-    Write-Host "Installing dependencies..."
-    & $pythonVenv -m pip install -r $reqFile
-
-    Write-Host "=========================================="
-    Write-Host "Setup Complete!"
-    Write-Host "To run the script, use the following commands:"
-    Write-Host ".\venv\Scripts\Activate.ps1"
-    Write-Host "python zoom.py"
-
-} catch {
-    Write-Host ""
-    Write-Host "=========================================="
-    Write-Host "AN ERROR OCCURRED:" -ForegroundColor Red
-    Write-Host $_.Exception.Message -ForegroundColor Red
-    Write-Host "=========================================="
-} finally {
-    Write-Host ""
-    Write-Host "=========================================="
-    Read-Host -Prompt "Press Enter to exit"
+    return $null
 }
+
+# 1. Check Python
+$pythonCmd = Get-PythonPath
+
+if (-not $pythonCmd) {
+    Write-Host "[!] Python 3 not found in PATH." -ForegroundColor Yellow
+    Write-Host "[+] Attempting to install Python via winget..." -ForegroundColor Green
+
+    $installed = $false
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        try {
+            winget install --id Python.Python.3.11 --exact --accept-package-agreements --accept-source-agreements --scope user
+            $installed = $true
+        } catch {
+            Write-Host "[-] Failed to install Python via winget." -ForegroundColor Yellow
+        }
+    }
+
+    if (-not $installed) {
+        Write-Host "[+] Downloading official Python 3.11 installer..." -ForegroundColor Green
+        $installerUrl = "https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe"
+        $installerPath = "$env:TEMP\python-3.11.9-amd64.exe"
+        
+        try {
+            Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
+            Write-Host "[+] Running Python installer..." -ForegroundColor Green
+            Start-Process -FilePath $installerPath -ArgumentList "/quiet InstallAllUsers=0 PrependPath=1 Include_pip=1" -Wait
+            Remove-Item $installerPath -ErrorAction SilentlyContinue
+            $installed = $true
+        } catch {
+            Write-Host "[-] Download or installation failed: $_" -ForegroundColor Red
+        }
+    }
+
+    # Refresh PATH
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+    $pythonCmd = Get-PythonPath
+
+    if (-not $pythonCmd) {
+        Write-Host "[-] ERROR: Python not found after installation attempt." -ForegroundColor Red
+        Write-Host "Please install Python 3 manually from https://www.python.org/downloads/" -ForegroundColor Red
+        Write-Host "Make sure to check 'Add Python to PATH' during installation!" -ForegroundColor Red
+        exit 1
+    }
+}
+
+Write-Host "[v] Found Python: $pythonCmd" -ForegroundColor Green
+
+# 2. Virtual Environment (venv) setup
+$venvDir = Join-Path $PSScriptRoot "venv"
+$venvPython = Join-Path $venvDir "Scripts\python.exe"
+
+if (-not (Test-Path $venvPython)) {
+    Write-Host "[+] Creating virtual environment (venv)..." -ForegroundColor Green
+    if ($pythonCmd -eq "py -3") {
+        & py -3 -m venv "$venvDir"
+    } else {
+        & "$pythonCmd" -m venv "$venvDir"
+    }
+} else {
+    Write-Host "[v] Virtual environment 'venv' already exists." -ForegroundColor Green
+}
+
+if (-not (Test-Path $venvPython)) {
+    Write-Host "[-] ERROR: Could not find venv\Scripts\python.exe" -ForegroundColor Red
+    exit 1
+}
+
+# 3. Install dependencies
+$reqFile = Join-Path $PSScriptRoot "requirements.txt"
+if (-not (Test-Path $reqFile)) {
+    Write-Host "[+] Creating requirements.txt..." -ForegroundColor Green
+    $dependencies = @("pyautogui", "schedule", "pyaudio", "pygetwindow")
+    $dependencies | Out-File -FilePath $reqFile -Encoding ASCII
+}
+
+Write-Host "[+] Upgrading pip..." -ForegroundColor Green
+& "$venvPython" -m pip install --upgrade pip
+
+Write-Host "[+] Installing dependencies from requirements.txt..." -ForegroundColor Green
+& "$venvPython" -m pip install -r "$reqFile"
+
+Write-Host ""
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host "   Setup completed successfully!" -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host "To run the application, execute start_zoom.bat" -ForegroundColor Yellow

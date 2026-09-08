@@ -1,3 +1,4 @@
-﻿pyautogui
+pyautogui
 schedule
 pyaudio
+pygetwindow

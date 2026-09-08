@@ -10,7 +10,7 @@ cd /d "%~dp0"
 :: Проверяем, существует ли виртуальное окружение
 if not exist "venv\Scripts\python.exe" (
     echo [ERROR] Виртуальное окружение не найдено!
-    echo Сначала запустите файл setup.ps1, чтобы установить Python и нужные библиотеки.
+    echo Сначала запустите файл setup.bat (или setup.ps1), чтобы установить Python и нужные библиотеки.
     echo.
     pause
     exit /b 1
