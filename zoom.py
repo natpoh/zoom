@@ -11,7 +11,17 @@ import csv
 import random
 import pygetwindow as gw
 
-from config import conf_id, conf_pass, kirtan_folder
+try:
+    from config import conf_id, conf_pass, kirtan_folder
+except ImportError:
+    print("[INFO] Файл config.py не найден. Создаю config.py из шаблона config.py.example...")
+    if os.path.exists("config.py.example"):
+        import shutil
+        shutil.copy("config.py.example", "config.py")
+    else:
+        with open("config.py", "w", encoding="utf-8") as f:
+            f.write("# Данные для входа в Zoom\nconf_id = '85244706153'\nconf_pass = 'd3piUExIRlBaTkttZlRZM2xidGtlZz09'\n\n# Настройки\nkirtan_folder = 'C:/kirtans/'\n")
+    from config import conf_id, conf_pass, kirtan_folder
 
 def locate_image(image_path, **kwargs):
     full_path = os.path.join('images', image_path)
@@ -97,6 +107,7 @@ def zoomcounted():
     return pythons_tasklist
 
 def savedata(zoomdata):
+    os.makedirs('data', exist_ok=True)
     f = open('data/zoomdata.txt', 'w')
     f.write(str(zoomdata))
     f.close()
@@ -106,9 +117,14 @@ def checkzoom():
     zoomcount= str(zoomcount)
     print(zoomcount)
 
-    f = open('data/zoomdata.txt', 'r')
+    os.makedirs('data', exist_ok=True)
+    if not os.path.exists('data/zoomdata.txt'):
+        savedata(zoomcount)
 
-    for zoomdata in f:
+    zoomdata = ''
+    f = open('data/zoomdata.txt', 'r')
+    for line in f:
+        zoomdata = line
         time.sleep(0.1)
     f.close()
 
@@ -202,10 +218,13 @@ def getlastday(update):
     global lastday
     #print(lastday)
     if ((lastday == 0 ) or ( update == 1 ) ):
-        f = open('lastday.txt', 'r')
-        for lastday in f:
-             print('берем дату из файла '+str(lastday))
-        f.close()
+        if os.path.exists('lastday.txt'):
+            f = open('lastday.txt', 'r')
+            for lastday in f:
+                 print('берем дату из файла '+str(lastday))
+            f.close()
+        else:
+            lastday = 0
 
 
     now = datetime.datetime.now()
@@ -280,20 +299,28 @@ def check_last_played():
 
     lastsong = 0
 
-    f = open('list.txt', 'r')
-    try:
-        for lastsong in f:
-             print(lastsong)
-    except:
-        lastsong = 0
-    f.close()
+    lastsong = 0
+    if os.path.exists('list.txt'):
+        try:
+            f = open('list.txt', 'r')
+            for line in f:
+                lastsong = line.strip()
+                print(lastsong)
+            f.close()
+        except Exception:
+            lastsong = 0
 
-    
-    #берем список файлов
+    # берем список файлов
     directory = kirtan_folder
-    files = os.listdir(directory)      
+    if not os.path.exists(directory):
+        print(f"[WARNING] Папка с аудио не найдена: {directory}")
+        return lastsong
+    files = os.listdir(directory)
     files = list(filter(lambda x: x.endswith('.mp3'), files))
-    next_song=random.choice(files)
+    if not files:
+        print(f"[WARNING] В папке {directory} нет .mp3 файлов!")
+        return lastsong
+    next_song = random.choice(files)
 
     index = 0
     # if lastsong!=0:

@@ -1,0 +1,6 @@
+# Данные для входа в Zoom
+conf_id = '85244706153'
+conf_pass = 'd3piUExIRlBaTkttZlRZM2xidGtlZz09'
+
+# Настройки (путь к папке с mp3 файлами)
+kirtan_folder = 'C:/kirtans/'

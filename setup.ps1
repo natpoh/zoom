@@ -112,6 +112,27 @@ Write-Host "[+] Upgrading pip..." -ForegroundColor Green
 Write-Host "[+] Installing dependencies from requirements.txt..." -ForegroundColor Green
 & "$venvPython" -m pip install -r "$reqFile"
 
+# 4. Check config.py
+$configFile = Join-Path $PSScriptRoot "config.py"
+$configExample = Join-Path $PSScriptRoot "config.py.example"
+if (-not (Test-Path $configFile)) {
+    if (Test-Path $configExample) {
+        Write-Host "[+] Creating config.py from template config.py.example..." -ForegroundColor Green
+        Copy-Item $configExample $configFile
+    } else {
+        Write-Host "[+] Creating default config.py..." -ForegroundColor Green
+        $configContent = @(
+            "# Zoom Credentials",
+            "conf_id = '85244706153'",
+            "conf_pass = 'd3piUExIRlBaTkttZlRZM2xidGtlZz09'",
+            "",
+            "# Audio Folder Path",
+            "kirtan_folder = 'C:/kirtans/'"
+        )
+        $configContent | Out-File -FilePath $configFile -Encoding ASCII
+    }
+}
+
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host "   Setup completed successfully!" -ForegroundColor Green
