@@ -133,8 +133,15 @@ if (-not (Test-Path $configFile)) {
     }
 }
 
+# 5. Audio device selection
+$selectAudioScript = Join-Path $PSScriptRoot "select_audio.py"
+if (Test-Path $selectAudioScript) {
+    & "$venvPython" "$selectAudioScript"
+}
+
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host "   Setup completed successfully!" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host "To run the application, execute start_zoom.bat" -ForegroundColor Yellow
+
