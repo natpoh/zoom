@@ -4,3 +4,6 @@ conf_pass = 'd3piUExIRlBaTkttZlRZM2xidGtlZz09'
 
 # Настройки (путь к папке с mp3 файлами)
 kirtan_folder = 'C:/kirtans/'
+
+# Номер (индекс) аудиоустройства ввода (если не указан, автопоиск найдёт виртуальную линию)
+audio_device_index = 2

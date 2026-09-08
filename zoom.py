@@ -40,23 +40,51 @@ FORMAT = pyaudio.paInt16
 RATE = 44100
 silent_threshold = 10
 time_wait = 60
-device = 2
+try:
+    from config import audio_device_index
+    device = audio_device_index
+except ImportError:
+    device = 2
 
-#conf_id = '8829424825'
-#conf_id = '9264933287'
-#conf_pass = 'bnk'
-#time_wait = 6
-#device = 1
+def get_audio_stream(p_instance, preferred_device, format_type, rate_val, chunk_val):
+    try:
+        info = p_instance.get_device_info_by_index(preferred_device)
+        if info.get('maxInputChannels', 0) > 0:
+            st = p_instance.open(format=format_type, channels=1, rate=rate_val, input=True, frames_per_buffer=chunk_val, input_device_index=preferred_device)
+            print(f"[INFO] Аудиоустройство #{preferred_device}: {info.get('name')}")
+            return st, preferred_device
+    except Exception as e:
+        print(f"[WARNING] Не удалось открыть устройство #{preferred_device}: {e}")
 
-zoomfolder ='zoommtg://zoom.us/join?action=join&confno='+str(conf_id)+'&pwd='+str(conf_pass)
+    print("[INFO] Автопоиск виртуального аудиоустройства...")
+    for dev_i in range(p_instance.get_device_count()):
+        try:
+            info = p_instance.get_device_info_by_index(dev_i)
+            if info.get('maxInputChannels', 0) > 0:
+                name_lower = info.get('name', '').lower()
+                if any(kw in name_lower for kw in ['cable', 'voicemeeter', 'stereo mix', 'стерео микшер']):
+                    st = p_instance.open(format=format_type, channels=1, rate=rate_val, input=True, frames_per_buffer=chunk_val, input_device_index=dev_i)
+                    print(f"[INFO] Найдена виртуальная линия #{dev_i}: {info.get('name')}")
+                    return st, dev_i
+        except Exception:
+            pass
 
+    for dev_i in range(p_instance.get_device_count()):
+        try:
+            info = p_instance.get_device_info_by_index(dev_i)
+            if info.get('maxInputChannels', 0) > 0:
+                st = p_instance.open(format=format_type, channels=1, rate=rate_val, input=True, frames_per_buffer=chunk_val, input_device_index=dev_i)
+                print(f"[INFO] Используем устройство ввода #{dev_i}: {info.get('name')}")
+                return st, dev_i
+        except Exception:
+            pass
 
+    raise RuntimeError("Не найдено ни одного рабочего устройства ввода аудио!")
 
-channels=p.get_device_info_by_index(device)
-print(channels)
+stream, device = get_audio_stream(p, device, FORMAT, RATE, CHUNK)
+channels = p.get_device_info_by_index(device)
+zoomfolder = 'zoommtg://zoom.us/join?action=join&confno=' + str(conf_id) + '&pwd=' + str(conf_pass)
 
-stream = p.open(format=FORMAT, channels=1, rate=RATE,
-                input=True, frames_per_buffer=CHUNK, input_device_index=device)
 
 
 def logfile(data):
