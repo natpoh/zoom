@@ -1,6 +1,7 @@
 import pyautogui as pg
 
 import os
+import sys
 import datetime
 import schedule
 import time
@@ -54,17 +55,49 @@ def get_audio_stream(p_instance, speaker_name, chunk_val):
     if speaker is not None:
         try:
             cap = ad.open_speaker_capture(p_instance, speaker, chunk_val)
-            print(f"[INFO] Слушаю динамик: {speaker['name']} ({cap.rate} Гц, {cap.channels} кан.)")
             return cap, speaker
         except Exception as e:
             print(f"[WARNING] Не удалось открыть динамик «{speaker['name']}»: {e}")
-    print("[INFO] Слушаю системный динамик (как в системе)...")
     speaker, cap = ad.open_default_speaker_capture(p_instance, chunk_val)
-    print(f"[INFO] Слушаю динамик: {speaker['name']} ({cap.rate} Гц, {cap.channels} кан.)")
     return cap, speaker
 
 
 capture, device = get_audio_stream(p, audio_output_device, CHUNK)
+
+
+# --- Вывод: одна живая строка состояния внизу, события отдельными строками с временем ---
+_status_shown = False
+
+
+def status(text):
+    """Живая строка (перерисовывается на месте)."""
+    global _status_shown
+    sys.stdout.write('\r' + text.ljust(78)[:78])
+    sys.stdout.flush()
+    _status_shown = True
+
+
+def say(text):
+    """Событие: своя строка с временем. Живая строка перед этим закрывается."""
+    global _status_shown
+    if _status_shown:
+        sys.stdout.write('\n')
+        _status_shown = False
+    print(time.strftime('%H:%M:%S') + '  ' + text)
+    sys.stdout.flush()
+
+
+def banner():
+    print()
+    print('=' * 60)
+    print('   Zoom-бот: слушаю конференцию')
+    print('=' * 60)
+    print(f"  Динамик:  {device['name']}  ({capture.rate} Гц, {capture.channels} кан.)")
+    print(f"  Голос:    громкость > {silent_threshold}")
+    print(f"  Тишина:   {time_wait} с подряд -> включаю киртан")
+    print(f"  Папка:    {kirtan_folder}")
+    print('  Переизбрать динамик: setup.bat.  Выход: Ctrl+C')
+    print('-' * 60)
 zoomfolder = 'zoommtg://zoom.us/join?action=join&confno=' + str(conf_id) + '&pwd=' + str(conf_pass)
 
 
@@ -159,14 +192,15 @@ def check_users_sound(time_wait):
         for x in range(time_wait):
             # Пиковая громкость динамика за секунду (0 = тишина или Zoom ничего не играет).
             threshold = capture.wait_peak(1.0)
+            # Та же шкала, что при проверке звука в setup; отсчёт тишины в той же строке.
+            status(f"  {time.strftime('%H:%M:%S')}  тишина {x + 1:3d}/{time_wait} с  [{ad.level_bar(threshold, 30)}] {threshold:5d}")
             if threshold > silent_threshold:
-                print("Sound found at index " + str(x) + ': ' + str(threshold))
-
+                if x > 0 or _kirtan_running():
+                    say(f"голос в конференции (громкость {threshold}), киртан на паузе")
                 pause_kirtan()
                 return 1
-            print(str(x) + ': ' + str(threshold))
 
-        print("Sound is off. Play_kirtan" )
+        say(f"{time_wait} с тишины, включаю киртан")
         logfile("Sound is off. Play_kirtan" )
         play_kirtan()
         return 0
@@ -177,7 +211,7 @@ def check_users_sound(time_wait):
 def enable_sound():
         datapon = locate_image('poniatno.png', grayscale=True)
         if datapon:
-            print('нажимаем понятно')
+            say('окно Zoom: нажимаю «Понятно»')
             pg.moveTo(datapon[0] + 5, datapon[1] + 5)
             pg.click()
             time.sleep(2)
@@ -185,7 +219,7 @@ def enable_sound():
 
         data = locate_image('mic_disabled.png',grayscale=True)
         if data:
-            print('пытаемся включить звук')
+            say('окно Zoom: включаю звук (микрофон был выключен)')
             pg.moveTo(data[0] + 5, data[1] + 5)
             pg.click()
             time.sleep(2)
@@ -202,24 +236,21 @@ def is_zoom_meeting_active():
                 if windows:
                     win = windows[0]
                     if win.isMinimized:
-                        print(f'[DEBUG] Окно "{title}" свернуто. Разворачиваем...')
+                        say(f'окно «{title}» было свёрнуто, разворачиваю')
                         win.restore()
                 return True
     except Exception as e:
-        print(f'[DEBUG] Ошибка работы с окнами: {e}')
+        say(f'ошибка при поиске окон Zoom: {e}')
     return False
 
 def runzoom():
-    print('[DEBUG] Проверка окон Zoom...')
     if is_zoom_meeting_active():
-        print('[DEBUG] Zoom-конференция активна.')
         return 1
-    else:
-        print('[DEBUG] Окно конференции не найдено. Запускаю Zoom по ссылке...')
-        os.startfile(r'' + zoomfolder)
-        print('[DEBUG] Жду 15 секунд пока загрузится Zoom...')
-        time.sleep(15)
-        return runzoom()
+    say('окно конференции не найдено, запускаю Zoom по ссылке и жду 15 с')
+    logfile('zoom not found, starting')
+    os.startfile(r'' + zoomfolder)
+    time.sleep(15)
+    return runzoom()
 
 
 def getlastday(update):
@@ -229,7 +260,7 @@ def getlastday(update):
         if os.path.exists('lastday.txt'):
             f = open('lastday.txt', 'r')
             for lastday in f:
-                 print('берем дату из файла '+str(lastday))
+                 pass
             f.close()
         else:
             lastday = 0
@@ -253,7 +284,6 @@ def getlastday(update):
     #
 
     if ( (int(d_hour) == int(dt_hour) and int(d_minutes) >= 30 and int(dt_minutes) < 30) or (int(d_hour) != int(dt_hour)) ):
-        print(str(d_hour) +':'+str(d_minutes) +' > '+ str(dt_hour) +':'+str(dt_minutes) )
         if (update == 1):
             f = open('lastday.txt', 'w')
             f.write(str(d_date))
@@ -261,7 +291,6 @@ def getlastday(update):
         lastday = d_date
         result = 1
     else:
-        print(str(d_hour) + ':' + str(d_minutes) + ' < ' + str(dt_hour) + ':' + str(dt_minutes))
         result = 0
     
 
@@ -270,30 +299,31 @@ def getlastday(update):
     
     
     
+def _kirtan_running():
+    return bool(isWindowsProcessRunning('LA.exe'))
+
+
 def pause_kirtan():
     #print('надо нажать на паузу')
     #print('проверяем может киртан уже играет')
     data = isWindowsProcessRunning('LA.exe')
     if data:
-        os.system("TASKKILL /F /IM LA.exe")
+        os.system("TASKKILL /F /IM LA.exe >nul 2>&1")
 
 
 
 def play_kirtan():
-    print('проверяем может киртан уже играет')
     data = isWindowsProcessRunning('LA.exe')
     if data:
-        print('плеер уже отктрыт')
+        say('киртан уже играет')
         return 1
 
-    print('проверяем включен ли звук')
     enable_sound()
 
-    print('похоже что плеер закрыт пытаемся открыть')
     kirtan_name = check_last_played()
-    
+
     logfile('запускаем файл ' + str(kirtan_name))
-    print('запускаем файл ' + str(kirtan_name))
+    say('киртан: ' + str(kirtan_name))
     os.startfile(r''+kirtan_folder+str(kirtan_name))
 
 
@@ -313,7 +343,6 @@ def check_last_played():
             f = open('list.txt', 'r')
             for line in f:
                 lastsong = line.strip()
-                print(lastsong)
             f.close()
         except Exception:
             lastsong = 0
@@ -356,7 +385,6 @@ def check_last_played():
     #     next_song = files[0]
     
     logfile(next_song)
-    print(next_song)
     f = open('list.txt', 'w')
     f.write(next_song)
     f.close()
@@ -372,8 +400,10 @@ def check_last_played():
 
 
 logfile("script started")
+banner()
 if (runzoom()):
    enable_sound()
+say('слушаю конференцию')
 
 i = 0;
 while True:
@@ -388,7 +418,6 @@ while True:
        
     
    if played == 1 and i >= 10:
-        print(i)
         enable_sound()
         i = 0
        

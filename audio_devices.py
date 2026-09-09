@@ -13,10 +13,12 @@ import pyaudiowpatch as pyaudio
 
 def fix_console():
     """Чтобы русские названия устройств не превращались в кракозябры в консоли."""
+    # Ловушка: новая TextIOWrapper без line_buffering копит вывод по 8 КБ и на экран
+    # ничего не попадает, пока скрипт не завершится. Поэтому reconfigure, а не подмена.
     if sys.platform == 'win32':
         for name in ('stdout', 'stderr'):
             try:
-                setattr(sys, name, io.TextIOWrapper(getattr(sys, name).buffer, encoding='utf-8', errors='replace'))
+                getattr(sys, name).reconfigure(encoding='utf-8', errors='replace', line_buffering=True)
             except Exception:
                 pass
 
