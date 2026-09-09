@@ -102,7 +102,7 @@ if (-not (Test-Path $venvPython)) {
 $reqFile = Join-Path $PSScriptRoot "requirements.txt"
 if (-not (Test-Path $reqFile)) {
     Write-Host "[+] Creating requirements.txt..." -ForegroundColor Green
-    $dependencies = @("pyautogui", "schedule", "pyaudio", "pygetwindow")
+    $dependencies = @("pyautogui", "schedule", "PyAudioWPatch", "pygetwindow")
     $dependencies | Out-File -FilePath $reqFile -Encoding ASCII
 }
 
@@ -127,15 +127,21 @@ if (-not (Test-Path $configFile)) {
             "conf_pass = 'd3piUExIRlBaTkttZlRZM2xidGtlZz09'",
             "",
             "# Audio Folder Path",
-            "kirtan_folder = 'C:/kirtans/'"
+            "kirtan_folder = 'C:/kirtans/'",
+            "",
+            "# Speaker that Zoom plays into (chosen by select_audio.py). Empty = system default.",
+            "audio_output_device = ''"
         )
         $configContent | Out-File -FilePath $configFile -Encoding ASCII
     }
 }
 
-# 5. Audio device selection
+# 5. Speaker selection (which speaker Zoom plays into - the bot listens to it)
+Write-Host ""
+Write-Host "[+] Choosing the speaker to listen to..." -ForegroundColor Green
 $selectAudioScript = Join-Path $PSScriptRoot "select_audio.py"
 if (Test-Path $selectAudioScript) {
+    $env:PYTHONIOENCODING = "utf-8"
     & "$venvPython" "$selectAudioScript"
 }
 
@@ -144,4 +150,5 @@ Write-Host "==========================================" -ForegroundColor Green
 Write-Host "   Setup completed successfully!" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host "To run the application, execute start_zoom.bat" -ForegroundColor Yellow
+Write-Host "To pick another speaker later, run setup.bat again (or: venv\Scripts\python.exe select_audio.py)" -ForegroundColor Yellow
 

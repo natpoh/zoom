@@ -4,8 +4,8 @@ import os
 import datetime
 import schedule
 import time
-import pyaudio
-import audioop
+import pyaudiowpatch as pyaudio
+import audio_devices as ad
 import subprocess
 import csv
 import random
@@ -34,55 +34,37 @@ def locate_image(image_path, **kwargs):
 
 global lastday
 lastday = 0
+
+# --- Звук: слушаем динамик, в который играет Zoom (WASAPI loopback) ---
+ad.fix_console()
 p = pyaudio.PyAudio()
 CHUNK = 1024
-FORMAT = pyaudio.paInt16
-RATE = 44100
 silent_threshold = 10
 time_wait = 60
 try:
-    from config import audio_device_index
-    device = audio_device_index
+    from config import audio_output_device
 except ImportError:
-    device = 2
+    audio_output_device = ''  # не выбран = системный динамик («Как в системе»)
 
-def get_audio_stream(p_instance, preferred_device, format_type, rate_val, chunk_val):
-    try:
-        info = p_instance.get_device_info_by_index(preferred_device)
-        if info.get('maxInputChannels', 0) > 0:
-            st = p_instance.open(format=format_type, channels=1, rate=rate_val, input=True, frames_per_buffer=chunk_val, input_device_index=preferred_device)
-            print(f"[INFO] Аудиоустройство #{preferred_device}: {info.get('name')}")
-            return st, preferred_device
-    except Exception as e:
-        print(f"[WARNING] Не удалось открыть устройство #{preferred_device}: {e}")
 
-    print("[INFO] Автопоиск виртуального аудиоустройства...")
-    for dev_i in range(p_instance.get_device_count()):
+def get_audio_stream(p_instance, speaker_name, chunk_val):
+    speaker = ad.find_speaker(p_instance, speaker_name)
+    if speaker_name and speaker is None:
+        print(f"[WARNING] Динамик «{speaker_name}» из config.py не найден. Запустите setup.bat и выберите заново.")
+    if speaker is not None:
         try:
-            info = p_instance.get_device_info_by_index(dev_i)
-            if info.get('maxInputChannels', 0) > 0:
-                name_lower = info.get('name', '').lower()
-                if any(kw in name_lower for kw in ['cable', 'voicemeeter', 'stereo mix', 'стерео микшер']):
-                    st = p_instance.open(format=format_type, channels=1, rate=rate_val, input=True, frames_per_buffer=chunk_val, input_device_index=dev_i)
-                    print(f"[INFO] Найдена виртуальная линия #{dev_i}: {info.get('name')}")
-                    return st, dev_i
-        except Exception:
-            pass
+            cap = ad.open_speaker_capture(p_instance, speaker, chunk_val)
+            print(f"[INFO] Слушаю динамик: {speaker['name']} ({cap.rate} Гц, {cap.channels} кан.)")
+            return cap, speaker
+        except Exception as e:
+            print(f"[WARNING] Не удалось открыть динамик «{speaker['name']}»: {e}")
+    print("[INFO] Слушаю системный динамик (как в системе)...")
+    speaker, cap = ad.open_default_speaker_capture(p_instance, chunk_val)
+    print(f"[INFO] Слушаю динамик: {speaker['name']} ({cap.rate} Гц, {cap.channels} кан.)")
+    return cap, speaker
 
-    for dev_i in range(p_instance.get_device_count()):
-        try:
-            info = p_instance.get_device_info_by_index(dev_i)
-            if info.get('maxInputChannels', 0) > 0:
-                st = p_instance.open(format=format_type, channels=1, rate=rate_val, input=True, frames_per_buffer=chunk_val, input_device_index=dev_i)
-                print(f"[INFO] Используем устройство ввода #{dev_i}: {info.get('name')}")
-                return st, dev_i
-        except Exception:
-            pass
 
-    raise RuntimeError("Не найдено ни одного рабочего устройства ввода аудио!")
-
-stream, device = get_audio_stream(p, device, FORMAT, RATE, CHUNK)
-channels = p.get_device_info_by_index(device)
+capture, device = get_audio_stream(p, audio_output_device, CHUNK)
 zoomfolder = 'zoommtg://zoom.us/join?action=join&confno=' + str(conf_id) + '&pwd=' + str(conf_pass)
 
 
@@ -175,16 +157,14 @@ def checkzoom():
 def check_users_sound(time_wait):
     if (runzoom()):
         for x in range(time_wait):
-            data = stream.read(CHUNK)
-            threshold = audioop.max(data, 2)
-            #print(str(x) + ': ' + str(threshold))
+            # Пиковая громкость динамика за секунду (0 = тишина или Zoom ничего не играет).
+            threshold = capture.wait_peak(1.0)
             if threshold > silent_threshold:
                 print("Sound found at index " + str(x) + ': ' + str(threshold))
-                
+
                 pause_kirtan()
                 return 1
             print(str(x) + ': ' + str(threshold))
-            time.sleep(1)
 
         print("Sound is off. Play_kirtan" )
         logfile("Sound is off. Play_kirtan" )

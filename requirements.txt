@@ -1,4 +1,4 @@
 pyautogui
 schedule
-pyaudio
+PyAudioWPatch
 pygetwindow
